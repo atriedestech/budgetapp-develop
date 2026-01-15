@@ -1,0 +1,19 @@
+.idea/
+*.iml
+target/
+.gradle/
+node_modules
+/bin/
+
+#eclipse ide files
+.classpath
+.project
+.settings/
+dependency-reduced-pom.xml
+
+
+# Added by Reorganization
+logs/
+*.log
+database/integrity_check.sql
+database/user_notes.sql
