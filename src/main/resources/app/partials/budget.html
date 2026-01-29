@@ -1,0 +1,49 @@
+<section class="content-header">
+    <h1>Add Budget</h1>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-md-6">
+
+            <section ng-include src="'/app/partials/message.html'"></section>
+
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">New Budget</h3>
+                </div>
+                <form role="form" name="form">
+                    <div class="panel-body">
+                        <div class="form-group" ng-class="errorClass('name')">
+                            <label for="name">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name"
+                                ng-model="budget.name" required>
+                            <span class="help-block"
+                                ng-show="form.name.$invalid && form.name.$dirty">{{errorMessage('name')}}</span>
+                        </div>
+                        <div class="form-group" ng-class="errorClass('categoryId')">
+                            <label for="category">Category</label>
+                            <select class="form-control" id="category" name="category" ng-model="budget.category"
+                                ng-options="c.name for c in categories track by c.id" required>
+                                <option value="">Select Category</option>
+                            </select>
+                            <span class="help-block"
+                                ng-show="form.category.$invalid && form.category.$dirty">{{errorMessage('categoryId')}}</span>
+                        </div>
+                        <div class="form-group" ng-class="errorClass('projected')">
+                            <label for="projected">Projected Amount</label>
+                            <input type="number" class="form-control" id="projected" name="projected" placeholder="0.00"
+                                ng-model="budget.projected" required>
+                            <span class="help-block"
+                                ng-show="form.projected.$invalid && form.projected.$dirty">{{errorMessage('projected')}}</span>
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button type="submit" class="btn btn-primary" ng-click="createBudget()">Submit</button>
+                        <a href="/budgets" class="btn btn-default">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

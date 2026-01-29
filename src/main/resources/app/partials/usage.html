@@ -1,0 +1,66 @@
+<div class="row" ng-show="usageLoaded">
+    <div class="col-lg-3 col-xs-6">
+        <!-- small box -->
+        <div class="small-box bg-green">
+            <div class="inner">
+                <h3>
+                    {{usage.income | safeCurrency : $root.user.currency}}
+                </h3>
+                <p>
+                    Income
+                </p>
+            </div>
+            <div class="icon">
+                <i class="fa fa-inr"></i>
+            </div>
+        </div>
+    </div><!-- ./col -->
+    <div class="col-lg-3 col-xs-6">
+        <!-- small box -->
+        <div class="small-box bg-aqua">
+            <div class="inner">
+                <h3>
+                    {{usage.projected | safeCurrency : $root.user.currency}}
+                </h3>
+                <p>
+                    Projected
+                </p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-pie-graph"></i>
+            </div>
+        </div>
+    </div><!-- ./col -->
+    <div class="col-lg-3 col-xs-6">
+        <!-- small box -->
+        <div class="small-box bg-yellow">
+            <div class="inner">
+                <h3>
+                    {{usage.actual | safeCurrency : $root.user.currency}}
+                </h3>
+                <p>
+                    Actual
+                </p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-card"></i>
+            </div>
+        </div>
+    </div><!-- ./col -->
+    <div class="col-lg-3 col-xs-6">
+        <!-- small box -->
+        <div class="small-box bg-red">
+            <div class="inner">
+                <h3>
+                    {{usage.remaining | safeCurrency : $root.user.currency}}
+                </h3>
+                <p>
+                    Remaining
+                </p>
+            </div>
+            <div class="icon">
+                <i class="ion ion-alert-circled"></i>
+            </div>
+        </div>
+    </div><!-- ./col -->
+</div>

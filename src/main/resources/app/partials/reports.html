@@ -1,0 +1,71 @@
+<section class="content-header">
+    <h1>Reports</h1>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Transactions Report</h3>
+                </div>
+                <div class="box-body">
+                    <form class="form-inline" role="form">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <p class="input-group">
+                                <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd"
+                                    ng-model="search.startDate" is-open="openedStart" datepicker-options="dateOptions"
+                                    ng-required="true" close-text="Close" />
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="openStart($event)"><i
+                                            class="glyphicon glyphicon-calendar"></i></button>
+                                </span>
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">End Date</label>
+                            <p class="input-group">
+                                <input type="text" class="form-control" uib-datepicker-popup="yyyy-MM-dd"
+                                    ng-model="search.endDate" is-open="openedEnd" datepicker-options="dateOptions"
+                                    ng-required="true" close-text="Close" />
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-default" ng-click="openEnd($event)"><i
+                                            class="glyphicon glyphicon-calendar"></i></button>
+                                </span>
+                            </p>
+                        </div>
+                        <button type="submit" class="btn btn-default" ng-click="doSearch()">Search</button>
+                    </form>
+
+                    <hr />
+
+                    <div ng-hide="transactionsLoaded" class="loading"></div>
+                    <table foo-table class="table footable" ng-show="transactions.length">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Category</th>
+                                <th>Budget</th>
+                                <th>Amount</th>
+                                <th>Remark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="transaction in transactions">
+                                <td>{{transaction.transactionOn | date}}</td>
+                                <td>{{transaction.budget.category.name}}</td>
+                                <td>{{transaction.budget.name}}</td>
+                                <td>{{transaction.amount | safeCurrency:'₹'}}</td>
+                                <td>{{transaction.remark}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div ng-show="transactionsLoaded && transactions.length == 0">
+                        No transactions found.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

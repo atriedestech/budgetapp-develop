@@ -1,0 +1,67 @@
+<section class="content-header">
+    <h1>Add Recurring</h1>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-md-6">
+
+            <section ng-include src="'/app/partials/message.html'"></section>
+
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">New Recurring Transaction</h3>
+                </div>
+                <form role="form" name="form">
+                    <div class="panel-body">
+                        <div class="form-group" ng-class="errorClass('amount')">
+                            <label for="amount">Amount</label>
+                            <input type="number" class="form-control" id="amount" name="amount" placeholder="0.00"
+                                ng-model="recurring.amount" required>
+                            <span class="help-block"
+                                ng-show="form.amount.$invalid && form.amount.$dirty">{{errorMessage('amount')}}</span>
+                        </div>
+                        <div class="form-group" ng-class="errorClass('recurringType')">
+                            <label for="recurringType">Recurring Type</label>
+                            <select class="form-control" id="recurringType" name="recurringType"
+                                ng-model="recurring.recurringType" required>
+                                <option value="">Select Type</option>
+                                <option value="DAILY">Daily</option>
+                                <option value="WEEKLY">Weekly</option>
+                                <option value="MONTHLY">Monthly</option>
+                                <option value="YEARLY">Yearly</option>
+                            </select>
+                            <span class="help-block"
+                                ng-show="form.recurringType.$invalid && form.recurringType.$dirty">{{errorMessage('recurringType')}}</span>
+                        </div>
+                        <div class="form-group" ng-class="errorClass('budgetId')">
+                            <label for="budget">Budget</label>
+                            <select class="form-control" id="budget" name="budget" ng-model="recurring.budget"
+                                ng-options="b.name for b in budgets track by b.id" required>
+                                <option value="">Select Budget</option>
+                            </select>
+                            <span class="help-block"
+                                ng-show="form.budget.$invalid && form.budget.$dirty">{{errorMessage('budgetId')}}</span>
+                        </div>
+                        <div class="form-group" ng-class="errorClass('recurringAt')">
+                            <label for="recurringAt">Recurring Date</label>
+                            <input type="date" class="form-control" id="recurringAt" name="recurringAt"
+                                ng-model="recurring.recurringAt" required>
+                            <span class="help-block"
+                                ng-show="form.recurringAt.$invalid && form.recurringAt.$dirty">{{errorMessage('recurringAt')}}</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="remark">Remark</label>
+                            <input type="text" class="form-control" id="remark" name="remark" placeholder="Enter Remark"
+                                ng-model="recurring.remark">
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button type="submit" class="btn btn-primary" ng-click="createRecurring()">Submit</button>
+                        <a href="/recurrings" class="btn btn-default">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

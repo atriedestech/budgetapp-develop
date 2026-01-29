@@ -1,0 +1,13 @@
+<div class="modal-header">
+    <h3 class="modal-title">Choose Budget</h3>
+</div>
+<div class="modal-body">
+    <ul class="list-group">
+        <li class="list-group-item clickable" ng-repeat="budget in validBudgets" ng-click="ok(budget)">
+            {{budget.name}}
+        </li>
+    </ul>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

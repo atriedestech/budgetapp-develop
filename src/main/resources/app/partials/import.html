@@ -1,0 +1,157 @@
+<section class="content-header">
+    <h2>Import</h2>
+</section>
+
+<section class="content">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="box box-primary">
+                <div class="box-header">
+                    <h3 class="box-title">Upload</h3>
+                </div>
+                <div class="box-body">
+                    <div class="alert alert-info">
+                        <strong>Quick Import:</strong> Paste your transactions below in CSV format (Date, Amount,
+                        Remark, Category).
+                        <br />
+                        Example: <code>2026-02-12, 50.00, Groceries, Food</code>
+                    </div>
+                    <form role="form">
+                        <div class="form-group">
+                            <textarea class="form-control" rows="10" ng-model="csvContent"
+                                placeholder="Paste your CSV content here..."></textarea>
+                        </div>
+                        <div class="box-footer">
+                            <button type="button" class="btn btn-primary" ng-click="parseCSV()">Parse Data</button>
+                            <button type="button" class="btn btn-default" ng-click="csvContent = ''">Clear</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div ng-if="showSuccess">
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <h3 class="panel-title">Success</h3>
+            </div>
+            <div class="panel-body">
+                You successfully imported {{transactionsImportedCount}} transactions
+            </div>
+        </div>
+    </div>
+
+    <div ng-hide="showSuccess">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="row" ng-show="transactions.length">
+                    <div class="col-lg-12">
+                        <button class="btn btn-success btn-block" ng-disabled="submitting"
+                            ng-click="submitTransactions()">Submit All</button>
+                    </div>
+                </div>
+                <br />
+
+                <div class="box box-primary" ng-show="transactions.length">
+                    <div class="box-body">
+                        <table class="table footable" ng-model="transactions"
+                            ng-show="transactions.length && transactionsLoaded && !columnsConfirmed">
+                            <thead>
+                                <tr>
+                                    <th ng-repeat="s in select">
+                                        <select ng-model="s.value" ng-change="columnChanged($index)">
+                                            <option value="init">Select One</option>
+                                            <option value="amount">Amount</option>
+                                            <option value="remark">Remark</option>
+                                            <option value="date">Transaction Date</option>
+                                            <option value="na">None of the Above</option>
+                                        </select>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="transaction in transactions">
+                                    <td ng-repeat="i in range(0, select.length)">
+                                        <span>{{transaction[i]}}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-pagination hide-if-no-paging">
+                                <tr>
+                                    <td colspan="4">
+                                        <ul class="pagination"></ul>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <table class="table footable" ng-model="transactions"
+                            ng-show="transactions.length && transactionsLoaded && columnsConfirmed">
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                    <th>Remark</th>
+                                    <th>Transaction Date</th>
+                                    <th>Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat-start="transaction in parsedTransactions"
+                                    ng-class="{'invalid': transaction.errors.length != 0}">
+                                    <td>
+                                        <span class="clickable"
+                                            ng-click="openEditTransactionModal(transaction, 'amount', dataTypes.INT)">
+                                            <span class="fa fa-pencil icon-edit" title="Edit name"></span>
+                                            {{transaction.amount | safeCurrency : $root.user.currency}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="clickable"
+                                            ng-click="openEditTransactionModal(transaction, 'remark', dataTypes.STRING)">
+                                            <span class="fa fa-pencil icon-edit" title="Edit name"></span>
+                                            {{transaction.remark}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="clickable"
+                                            ng-click="openEditTransactionModal(transaction, 'transactionOn', dataTypes.DATE)">
+                                            <span class="fa fa-pencil icon-edit" title="Edit name"></span>
+                                            {{transaction.transactionOn | date}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="clickable"
+                                            ng-click="openChooseBudgetModal(transaction, 'budget', dataTypes.BUDGET)">
+                                            <span class="fa fa-pencil icon-edit" title="Edit name"></span>
+                                            {{ transaction.budget.name || "Uncategorized"}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="submit" class="btn btn-danger"
+                                            ng-click="removeTransaction($index)">
+                                            <span class="fa fa-trash-o" ng-hide="transaction.loading"></span>
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr ng-repeat="error in transaction.errors" ng-repeat-end>
+                                    <td></td>
+                                    <td>{{error}}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-pagination hide-if-no-paging">
+                                <tr>
+                                    <td colspan="4">
+                                        <ul class="pagination"></ul>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
