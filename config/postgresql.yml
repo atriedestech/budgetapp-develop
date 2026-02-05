@@ -1,0 +1,77 @@
+# Database settings for PostgreSQL
+database:
+  driverClass: org.postgresql.Driver
+  user: budgetapp
+  password: budgetapp
+  url: jdbc:postgresql://localhost:5432/budgetapp
+  properties:
+    charSet: UTF-8
+    hibernate.dialect: io.budgetapp.hibernate.dialect.CustomPostgreSQLDialect
+    hibernate.format_sql: true
+  validationQuery: SELECT 1
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 8080
+  adminConnectors:
+    - type: http
+      port: 8081
+  registerDefaultExceptionMappers: false
+
+assets:
+  overrides:
+    /app: src/main/resources/app
+
+logging:
+  level: INFO
+  loggers:
+    io.budgetapp: DEBUG
+    org.hibernate.SQL: INFO
+  appenders:
+    - type: console
+
+# Categories and Budgets (Simplified for brevity, full list available in original config.yml)
+categories:
+  - name: Income
+    type: INCOME
+  - name: Home
+    type: EXPENDITURE
+  - name: Transportation
+    type: EXPENDITURE
+  - name: Health
+    type: EXPENDITURE
+  - name: Charity/Gifts
+    type: EXPENDITURE
+  - name: Daily Living
+    type: EXPENDITURE
+  - name: Entertainment
+    type: EXPENDITURE
+  - name: Savings
+    type: EXPENDITURE
+  - name: Obligations
+    type: EXPENDITURE
+  - name: Miscellaneous
+    type: EXPENDITURE
+
+budgets:
+  Income:
+    - name: Wages & Tips
+  Home:
+    - name: Mortgage/Rent
+  Transportation:
+    - name: Vehicle Payments
+  Health:
+    - name: Health Insurance
+  Charity/Gifts:
+    - name: Gifts Given
+  Daily Living:
+    - name: Groceries
+  Entertainment:
+    - name: Movies/Theater
+  Savings:
+    - name: Emergency Fund
+  Obligations:
+    - name: Student Loan
+  Miscellaneous:
+    - name: Bank Fees
