@@ -1,23 +1,14 @@
-# ============================================
-# Render.com Infrastructure as Code
-# Documentation: https://render.com/docs/blueprint-spec
-# ============================================
-
 services:
   # PostgreSQL Database
   - type: pserv
     name: budgetapp-db
     plan: free
-    # Free tier: 1 GB storage, 90 days retention
-    # Database auto-sleeps after inactivity
 
   # Web Service (Docker)
   - type: web
     name: budgetapp
+    runtime: docker
     plan: free
-    # Free tier: 512 MB RAM, shared CPU
-    # Auto-sleeps after 15 minutes of inactivity
-    # Wakes up on first request (~30 seconds)
     
     # Build configuration
     dockerfilePath: ./Dockerfile
@@ -54,7 +45,6 @@ services:
       
       - key: JAVA_OPTS
         value: -Xmx400m -Xms200m
-        # Reduced for free tier (512 MB total)
     
     # Auto-deploy on git push
     autoDeploy: true
