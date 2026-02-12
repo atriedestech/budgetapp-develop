@@ -1,33 +1,36 @@
-services:
-- type: pserv
-  name: budgetapp-db
-  plan: free
+# Render Blueprint Configuration
+# Corrected: PostgreSQL in databases section, not services
 
-- type: web
-  name: budgetapp
-  runtime: docker
-  plan: free
-  dockerfilePath: ./Dockerfile
-  healthCheckPath: /healthcheck
-  envVars:
-  - key: DB_DRIVER
-    value: org.postgresql.Driver
-  - key: DB_DIALECT
-    value: org.hibernate.dialect.PostgreSQL95Dialect
-  - key: DB_URL
-    fromDatabase:
-      name: budgetapp-db
-      property: connectionString
-  - key: DB_USERNAME
-    fromDatabase:
-      name: budgetapp-db
-      property: user
-  - key: DB_PASSWORD
-    fromDatabase:
-      name: budgetapp-db
-      property: password
-  - key: DB_VALIDATE_QUERY
-    value: SELECT 1
-  - key: JAVA_OPTS
-    value: -Xmx400m -Xms200m
-  autoDeploy: true
+databases:
+  - name: budgetapp-db
+    databaseName: budgetapp
+    user: budgetapp
+    plan: free
+
+services:
+  - type: web
+    name: budgetapp
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DB_DRIVER
+        value: org.postgresql.Driver
+      - key: DB_DIALECT
+        value: org.hibernate.dialect.PostgreSQL95Dialect
+      - key: DB_URL
+        fromDatabase:
+          name: budgetapp-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: budgetapp-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: budgetapp-db
+          property: password
+      - key: DB_VALIDATE_QUERY
+        value: SELECT 1
+      - key: JAVA_OPTS
+        value: -Xmx400m -Xms200m
