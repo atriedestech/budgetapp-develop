@@ -84,4 +84,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8081/healthcheck || exit 1
 
 # Run the application
-CMD ["sh", "-c", "export DB_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME} && java -Xmx384m -Xms192m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -jar budgetapp.jar server config.yml"]
+CMD ["sh", "-c", "export DB_URL=$(echo $DB_URL | sed 's/^postgres:/jdbc:postgresql:/') && java -Xmx384m -Xms192m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom -jar budgetapp.jar server config.yml"]
