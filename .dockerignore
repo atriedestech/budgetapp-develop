@@ -21,9 +21,9 @@ target/
 node_modules/
 bower_components/
 
-# Ignore development dependencies
-package-lock.json
-gulpfile.js
+# Development tools (NOT excluded - needed for Docker build)
+# package-lock.json - required by npm ci
+# gulpfile.js - required by npm run build
 
 # Ignore local environment files
 .env
