@@ -4,47 +4,32 @@ services:
     name: budgetapp-db
     plan: free
 
-  # Web Service (Docker)
+  # Web Service (Docker-based)
   - type: web
     name: budgetapp
-    runtime: docker
     plan: free
-    
-    # Build configuration
     dockerfilePath: ./Dockerfile
     dockerContext: ./
-    
-    # Health check endpoint
     healthCheckPath: /healthcheck
-    
-    # Environment variables
     envVars:
       - key: DB_DRIVER
         value: org.postgresql.Driver
-      
       - key: DB_DIALECT
         value: org.hibernate.dialect.PostgreSQL95Dialect
-      
       - key: DB_URL
         fromDatabase:
           name: budgetapp-db
           property: connectionString
-      
       - key: DB_USERNAME
         fromDatabase:
           name: budgetapp-db
           property: user
-      
       - key: DB_PASSWORD
         fromDatabase:
           name: budgetapp-db
           property: password
-      
       - key: DB_VALIDATE_QUERY
         value: SELECT 1
-      
       - key: JAVA_OPTS
         value: -Xmx400m -Xms200m
-    
-    # Auto-deploy on git push
     autoDeploy: true
