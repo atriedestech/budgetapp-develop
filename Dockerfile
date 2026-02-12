@@ -14,14 +14,14 @@ WORKDIR /build
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy frontend source files
 COPY gulpfile.js ./
 COPY src/main/resources/app ./src/main/resources/app/
 
 # Build production assets
-RUN npm run build
+RUN npx gulp build
 
 # Verify build output exists
 RUN ls -la src/main/resources/app/assets/css/
