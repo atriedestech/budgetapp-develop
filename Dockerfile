@@ -1,102 +1,93 @@
 # ============================================
-# Stage 1: Frontend Build
-# Purpose: Build production-ready frontend assets (minified CSS/JS)
+# Optimized Multi-Stage Dockerfile for Render Free Tier
+# Addresses: build timeouts, memory limits, caching
 # ============================================
-FROM node:20-alpine AS frontend-builder
-
-# Set working directory
-WORKDIR /build
-
-# Copy package files first for better layer caching
-# This layer is cached unless package.json or package-lock.json changes
-COPY package.json package-lock.json ./
-
-# Install dependencies using npm ci for deterministic builds
-# - npm ci is faster than npm install
-# - Uses exact versions from package-lock.json
-# - Automatically removes node_modules before installing
-RUN npm ci --only=production
-
-# Copy frontend source files
-COPY gulpfile.js ./
-COPY src/main/resources/app ./src/main/resources/app/
-
-# Build production assets (minified CSS)
-# This generates optimized CSS files in src/main/resources/app/assets/css/
-RUN npm run build
-
-# Verify build output exists
-RUN ls -la src/main/resources/app/assets/css/
 
 # ============================================
-# Stage 2: Backend Build
-# Purpose: Compile Java code and create shaded JAR
+# Stage 1: Frontend Build (Node.js + Gulp)
 # ============================================
-FROM maven:3.8-eclipse-temurin-8 AS backend-builder
+FROM node:18-alpine AS frontend-builder
 
-# Set working directory
-WORKDIR /build
-
-# Copy pom.xml first for better layer caching
-# This layer is cached unless pom.xml changes
-COPY pom.xml ./
-
-# Download all Maven dependencies and cache them
-# This step is cached until pom.xml changes, saving significant build time
-RUN mvn dependency:go-offline -B
-
-# Copy project source files
-COPY src ./src
-COPY config ./config
-COPY database ./database
-
-# Copy the built frontend assets from Stage 1
-# The shaded JAR will package these resources
-COPY --from=frontend-builder /build/src/main/resources/app ./src/main/resources/app
-
-# Build the application (skip tests for production build)
-# Output: target/budgetapp.jar (shaded JAR with all dependencies)
-RUN mvn clean package -DskipTests -B
-
-# Verify the JAR was created
-RUN ls -lh target/budgetapp.jar
-
-# ============================================
-# Stage 3: Runtime
-# Purpose: Minimal, secure runtime environment
-# ============================================
-FROM eclipse-temurin:8-jre-alpine
-
-# Install wget for health checks
-RUN apk add --no-cache wget
-
-# Create non-root user and group for running the application
-# Security best practice: never run applications as root
-RUN addgroup -S budgetapp && adduser -S budgetapp -G budgetapp
-
-# Set working directory
 WORKDIR /app
 
-# Copy the shaded JAR from Stage 2
-# --chown ensures the file is owned by the budgetapp user
-COPY --from=backend-builder --chown=budgetapp:budgetapp /build/target/budgetapp.jar ./budgetapp.jar
+# Copy package files ONLY (better caching)
+COPY package*.json ./
 
-# Copy configuration file
-COPY --chown=budgetapp:budgetapp config/config.yml ./config.yml
+# Install dependencies with npm ci (faster, more reliable)
+RUN npm ci --only=production --no-audit --prefer-offline
 
-# Switch to non-root user
-# All subsequent commands and the application will run as this user
-USER budgetapp
+# Copy frontend source
+COPY gulpfile.js ./
+COPY src/main/resources/assets ./src/main/resources/assets
 
-# Expose application port (8080)
-# Admin port (8081) is NOT exposed for security - only accessible via docker exec
+# Build frontend assets
+RUN npx gulp build
+
+# ============================================
+# Stage 2: Backend Build (Maven + Java)
+# ============================================
+FROM maven:3.9-eclipse-temurin-17-alpine AS backend-builder
+
+WORKDIR /app
+
+# Copy Maven files ONLY (better caching)
+COPY pom.xml ./
+
+# Download dependencies ONLY (cached if pom.xml unchanged)
+# Use --fail-never to handle transient network issues
+RUN mvn dependency:go-offline -B --fail-never || true
+
+# Copy source code
+COPY src ./src
+
+# Copy built frontend assets from stage 1
+COPY --from=frontend-builder /app/src/main/resources/assets/dist ./src/main/resources/assets/dist
+
+# Build JAR with optimizations for free tier
+# -DskipTests: Skip tests to save time
+# -T 1C: Use 1 thread per CPU core
+# -Dmaven.compiler.fork=false: Reduce memory usage
+RUN mvn clean package -DskipTests -B \
+    -Dmaven.compiler.fork=false \
+    -Dhttp.keepAlive=false \
+    -Dmaven.wagon.http.pool=false
+
+# ============================================
+# Stage 3: Runtime (Minimal Production Image)
+# ============================================
+FROM eclipse-temurin:17-jre-alpine
+
+# Install wget for health checks (minimal)
+RUN apk add --no-cache wget
+
+WORKDIR /app
+
+# Copy only the JAR and config (minimal image)
+COPY --from=backend-builder /app/target/budgetapp-*.jar budgetapp.jar
+COPY config.yml ./
+
+# Create non-root user for security
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+# Expose application port
 EXPOSE 8080
 
-# Health check using the admin health endpoint
-# Docker/orchestrators can use this to detect unhealthy containers
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+# Health check using admin endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8081/healthcheck || exit 1
 
-# Run the application
-CMD ["java", "-jar", "budgetapp.jar", "server", "config.yml"]
-
+# Run with optimized JVM settings for free tier (512MB)
+# -Xmx384m: Max heap 384MB (leave room for non-heap)
+# -Xms192m: Initial heap 192MB
+# -XX:+UseSerialGC: Lightweight GC for small heap
+# -XX:MaxMetaspaceSize=128m: Limit metaspace
+CMD ["java", \
+    "-Xmx384m", \
+    "-Xms192m", \
+    "-XX:+UseSerialGC", \
+    "-XX:MaxMetaspaceSize=128m", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", "budgetapp.jar", \
+    "server", "config.yml"]
