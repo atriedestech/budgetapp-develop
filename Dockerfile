@@ -73,6 +73,10 @@ WORKDIR /app
 COPY --from=backend-builder --chown=budgetapp:budgetapp /build/target/budgetapp.jar ./budgetapp.jar
 COPY --chown=budgetapp:budgetapp config/config.yml ./config.yml
 
+# Copy startup script
+COPY --chown=budgetapp:budgetapp start.sh .
+RUN chmod +x start.sh
+
 # Switch to non-root user
 USER budgetapp
 
@@ -84,9 +88,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8081/healthcheck || exit 1
 
 # Run the application
-# Copy startup script
-COPY start.sh .
-RUN chmod +x start.sh
+
 
 # Run the application via script
 CMD ["./start.sh"]
