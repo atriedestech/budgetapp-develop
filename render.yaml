@@ -1,12 +1,11 @@
 services:
-  # PostgreSQL Database
   - type: pserv
     name: budgetapp-db
     plan: free
 
-  # Web Service (Docker-based)
   - type: web
     name: budgetapp
+    runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: ./
