@@ -1,93 +1,89 @@
 # ============================================
-# Optimized Multi-Stage Dockerfile for Render Free Tier
-# Addresses: build timeouts, memory limits, caching
+# Multi-Stage Dockerfile for Render Free Tier
+# Java 8 | Dropwizard | Gulp | PostgreSQL
 # ============================================
 
 # ============================================
-# Stage 1: Frontend Build (Node.js + Gulp)
+# Stage 1: Frontend Build
 # ============================================
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy package files ONLY (better caching)
-COPY package*.json ./
+# Copy package files first for layer caching
+COPY package.json package-lock.json ./
 
-# Install dependencies with npm ci (faster, more reliable)
-RUN npm ci --only=production --no-audit --prefer-offline
+# Install dependencies
+RUN npm ci --only=production
 
-# Copy frontend source
+# Copy frontend source files
 COPY gulpfile.js ./
-COPY src/main/resources/assets ./src/main/resources/assets
+COPY src/main/resources/app ./src/main/resources/app/
 
-# Build frontend assets
-RUN npx gulp build
+# Build production assets
+RUN npm run build
+
+# Verify build output exists
+RUN ls -la src/main/resources/app/assets/css/
 
 # ============================================
-# Stage 2: Backend Build (Maven + Java)
+# Stage 2: Backend Build
 # ============================================
-FROM maven:3.9-eclipse-temurin-17-alpine AS backend-builder
+FROM maven:3.8-eclipse-temurin-8 AS backend-builder
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy Maven files ONLY (better caching)
+# Copy pom.xml first for dependency caching
 COPY pom.xml ./
 
-# Download dependencies ONLY (cached if pom.xml unchanged)
-# Use --fail-never to handle transient network issues
-RUN mvn dependency:go-offline -B --fail-never || true
+# Download dependencies (cached until pom.xml changes)
+RUN mvn dependency:go-offline -B || true
 
-# Copy source code
+# Copy project source files
 COPY src ./src
+COPY config ./config
+COPY database ./database
 
-# Copy built frontend assets from stage 1
-COPY --from=frontend-builder /app/src/main/resources/assets/dist ./src/main/resources/assets/dist
+# Copy built frontend assets from Stage 1
+COPY --from=frontend-builder /build/src/main/resources/app ./src/main/resources/app
 
-# Build JAR with optimizations for free tier
-# -DskipTests: Skip tests to save time
-# -T 1C: Use 1 thread per CPU core
-# -Dmaven.compiler.fork=false: Reduce memory usage
+# Build the application (skip tests)
 RUN mvn clean package -DskipTests -B \
     -Dmaven.compiler.fork=false \
     -Dhttp.keepAlive=false \
     -Dmaven.wagon.http.pool=false
 
-# ============================================
-# Stage 3: Runtime (Minimal Production Image)
-# ============================================
-FROM eclipse-temurin:17-jre-alpine
+# Verify the JAR was created
+RUN ls -lh target/budgetapp.jar
 
-# Install wget for health checks (minimal)
+# ============================================
+# Stage 3: Runtime
+# ============================================
+FROM eclipse-temurin:8-jre-alpine
+
+# Install wget for health checks
 RUN apk add --no-cache wget
+
+# Create non-root user
+RUN addgroup -S budgetapp && adduser -S budgetapp -G budgetapp
 
 WORKDIR /app
 
-# Copy only the JAR and config (minimal image)
-COPY --from=backend-builder /app/target/budgetapp-*.jar budgetapp.jar
-COPY config.yml ./
+# Copy JAR and config
+COPY --from=backend-builder --chown=budgetapp:budgetapp /build/target/budgetapp.jar ./budgetapp.jar
+COPY --chown=budgetapp:budgetapp config/config.yml ./config.yml
 
-# Create non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN chown -R appuser:appgroup /app
-USER appuser
+# Switch to non-root user
+USER budgetapp
 
 # Expose application port
 EXPOSE 8080
 
-# Health check using admin endpoint
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8081/healthcheck || exit 1
 
-# Run with optimized JVM settings for free tier (512MB)
-# -Xmx384m: Max heap 384MB (leave room for non-heap)
-# -Xms192m: Initial heap 192MB
-# -XX:+UseSerialGC: Lightweight GC for small heap
-# -XX:MaxMetaspaceSize=128m: Limit metaspace
-CMD ["java", \
-    "-Xmx384m", \
-    "-Xms192m", \
-    "-XX:+UseSerialGC", \
-    "-XX:MaxMetaspaceSize=128m", \
+# Run the application
+CMD ["java", "-Xmx384m", "-Xms192m", "-XX:+UseSerialGC", \
     "-Djava.security.egd=file:/dev/./urandom", \
-    "-jar", "budgetapp.jar", \
-    "server", "config.yml"]
+    "-jar", "budgetapp.jar", "server", "config.yml"]
