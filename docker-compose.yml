@@ -1,17 +1,100 @@
 version: '3.8'
 
-services:
-  db:
-    image: postgres:15-alpine
-    container_name: budgetapp-db
-    environment:
-      POSTGRES_DB: budgetapp
-      POSTGRES_USER: budgetapp
-      POSTGRES_PASSWORD: budgetapp
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+# ============================================
+# Development Docker Compose Configuration
+# Use: docker-compose up -d
+# ============================================
+
+networks:
+  budgetapp-network:
+    driver: bridge
+    name: budgetapp-network
 
 volumes:
   postgres_data:
+    name: budgetapp_postgres_data
+
+services:
+  # ==========================================
+  # PostgreSQL Database Service
+  # ==========================================
+  db:
+    image: postgres:15-alpine
+    container_name: budgetapp-db
+    networks:
+      - budgetapp-network
+    environment:
+      POSTGRES_DB: ${DB_NAME:-budgetapp}
+      POSTGRES_USER: ${DB_USER:-budgetapp}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-budgetapp}
+    ports:
+      # Exposed for local development (SQL client access)
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-budgetapp}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: on-failure
+
+  # ==========================================
+  # Budget App Application Service
+  # ==========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: budgetapp-app
+    networks:
+      - budgetapp-network
+    environment:
+      # Database Configuration
+      DB_DRIVER: org.postgresql.Driver
+      DB_DIALECT: org.hibernate.dialect.PostgreSQL95Dialect
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-budgetapp}
+      DB_USERNAME: ${DB_USER:-budgetapp}
+      DB_PASSWORD: ${DB_PASSWORD:-budgetapp}
+      DB_VALIDATE_QUERY: SELECT 1
+      # JVM Configuration
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx512m -Xms256m}
+    ports:
+      # Exposed for local development (direct access)
+      - "8080:8080"
+      - "8081:8081" # Admin port for health checks/metrics
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/healthcheck" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+
+  # ==========================================
+  # Nginx Reverse Proxy Service
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: budgetapp-nginx
+    networks:
+      - budgetapp-network
+    ports:
+      - "80:80"
+      # Port 443 for HTTPS (production only, see docker-compose.prod.yml)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - app
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/healthcheck" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s

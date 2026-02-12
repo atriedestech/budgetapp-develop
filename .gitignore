@@ -1,9 +1,15 @@
-.idea/
+*.class
+.idea
 *.iml
 target/
-.gradle/
-node_modules
-/bin/
+node_modules/
+bower_components/
+classpath.txt
+logs/
+
+# Production secrets and SSL certificates
+.env.production
+certbot/bin/
 
 #eclipse ide files
 .classpath
