@@ -18,10 +18,18 @@ services:
         value: org.postgresql.Driver
       - key: DB_DIALECT
         value: org.hibernate.dialect.PostgreSQL95Dialect
-      - key: DB_URL
+      - key: DB_HOST
         fromDatabase:
           name: budgetapp-db
-          property: connectionString
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: budgetapp-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: budgetapp-db
+          property: databaseName
       - key: DB_USERNAME
         fromDatabase:
           name: budgetapp-db
